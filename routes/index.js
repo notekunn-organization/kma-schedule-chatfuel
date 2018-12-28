@@ -15,12 +15,23 @@ module.exports = function({ model, Op }) {
         // if(ip.indexOf('137.116') != 0 && ip.indexOf('104.209') != 0) return res.status(304).send('Không có quyền truy cập');
         let { gender, 'last name': last_name = '', 'first name': first_name = '', 'profile pic url': profile_pic_url = '', 'chatfuel user id': chatfuel_user_id = 1000 } = req.body;
 
-        User.upsert({
-            chatfuel_user_id,
-            last_name,
-            first_name,
-            gender,
-            profile_pic_url
+        User.findOrCreate({
+            where: {
+                chatfuel_user_id
+            },
+            defaults: {
+                last_name,
+                first_name,
+                gender,
+                profile_pic_url
+            }
+        }).spread(function(user, created) {
+            if (!created) user.update({
+                last_name,
+                first_name,
+                gender,
+                profile_pic_url
+            }, { where: {} })
         })
 
         /*======== Lưu xong ===========*/

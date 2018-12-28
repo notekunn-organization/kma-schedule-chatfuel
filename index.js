@@ -4,7 +4,7 @@ const app = express()
 const { sequelize, Op, Sequelize } = require("./config/sequelize");
 const model = require('./config/model')({ sequelize, Sequelize });
 require('./config/express')({ app, express });
-require('./config/route')({ app, model })
+require('./config/route')({ app, model, Op })
 
 function listen() {
     let { PORT = 80 } = process.env;

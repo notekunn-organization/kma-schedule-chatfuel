@@ -11,6 +11,17 @@ module.exports = function({ model, Op }) {
     const User = model.use('user');
     const Describe = model.use('describe');
     const Schedule = model.use('schedule');
+
+    function getDate(date) {
+        let now = new Date(date || new Date());
+        let month = now.getMonth() + 1 + '';
+        let day = now.getDate() + '';
+        let year = now.getFullYear();
+
+        day = day.length < 2 ? '0' + day : day;
+        month = month.length < 2 ? '0' + month : month;
+        return `${day}/${month}/${year}`
+    }
     router.post('/update', function(req, res, next) {
         let { 'chatfuel user id': chatfuel_user_id, tai_khoan_sinh_vien: user, mat_khau_sinh_vien: pass } = req.body;
         loginKMA({ user, pass }, async function(error, api) {
@@ -34,9 +45,12 @@ module.exports = function({ model, Op }) {
                             chatfuel_user_id
                         }
                     })
-                    Promise.all(scheduleData.map(schedule => Schedule.upsert({
-                        studentCode,
-                        ...schedule
+                    Promise.all(scheduleData.map(schedule => Schedule.findOrCreate({
+                        where: {
+                            studentCode,
+                            ...schedule
+                        },
+                        defaults:{}
                     }))).then(Describe.update({
                         studentCode,
                         studentName,
@@ -47,8 +61,38 @@ module.exports = function({ model, Op }) {
         })
     });
 
-    router.get('/', function(req, res) {
-
+    router.post('/', async function(req, res) {
+        let { 'chatfuel user id': chatfuel_user_id } = req.body;
+        let { dateFind, thisweek } = req.query;
+        try {
+            let studentDescribed = await Describe.findOne({
+                where: { chatfuel_user_id, done: true },
+                attributes: ['studentCode', 'studentName']
+            })
+            if (!studentDescribed) return res.send((new Chatfuel()).sendText("Vui lòng đăng nhập trước khi tra cứu").render());
+            let chatfuel = new Chatfuel();
+            let { studentName, studentCode } = studentDescribed.get({ plain: true })
+            chatfuel.sendText(`Tài khoản sinh viên của bạn:\n${studentName}(${studentCode})`);
+            
+            let scheduleNow = await Schedule.findAll({
+                where: {
+                    [Op.and]: {
+                        studentCode,
+                        day: dateFind || getDate()
+                    }
+                }
+            });
+            // console.log(scheduleNow)
+            if (scheduleNow.length==0) return res.send(chatfuel.sendText("Không có thời khóa biểu hôm nay!").render());
+            scheduleNow.forEach(raw => {
+                let { day, subjectCode, subjectName, className, teacher, lesson, room } = raw.get({ plain: true });
+                chatfuel.sendText(`Ngày ${day}, Tiết ${lesson}:\n${subjectName}\nĐịa điểm: ${room} ${ teacher ? '\nGiáo viên: '+ teacher : '.'}`);
+            })
+            res.send(chatfuel.render());
+        }
+        catch (e) {
+            res.send((new Chatfuel()).sendText("Bị lỗi khi tra cứu:\n" + e).render());
+        }
     })
 
     return router;
