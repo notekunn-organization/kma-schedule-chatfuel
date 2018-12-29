@@ -18,18 +18,14 @@ module.exports = function({ model, Op }) {
         // let now = new Date(moment.date || new Date());
         let now;
         if (date) now = moment.tz(date, "DD/MM/YYYY", "Asia/Ho_Chi_Minh")
-        else now = moment().tz("Asia/Ho_Chi_Minh")
-        let month = now.getMonth() + 1 + '';
-        let day = now.getDate() + '';
-        let year = now.getFullYear();
-
-        day = day.length < 2 ? '0' + day : day;
-        month = month.length < 2 ? '0' + month : month;
-        return `${day}/${month}/${year}`
+        else now = moment().tz("Asia/Ho_Chi_Minh");
+        return now.format("DD/MM/YYYY")
     }
 
-    function getDaysOfWeek(date = new Date()) {
-        let now = moment.tz(moment.tz(new Date(date), "Asia/Ho_Chi_Minh").format("DD/MM/YYYY"), "DD/MM/YYYY", "Asia/Ho_Chi_Minh");
+    function getDaysOfWeek(date) {
+        let now;
+        if(!date) now = moment().tz("Asia/Ho_Chi_Minh");
+        else now = moment.tz(date, "DD/MM/YYYY", "Asia/Ho_Chi_Minh");
         let result = new Array();
         for (let i = 0; i <= 6; i++) {
             result.push(now.day(i).format("DD/MM/YYYY"));
@@ -103,7 +99,9 @@ module.exports = function({ model, Op }) {
             let chatfuel = new Chatfuel();
             let { studentName, studentCode } = studentDescribed.get({ plain: true })
             // chatfuel.sendText(`Tài khoản sinh viên của bạn:\n${studentName}(${studentCode})`);
-
+            // console.log(asweek ? {
+            //     [Op.in]: getDaysOfWeek(dayofweek || undefined)
+            // } : (dateFind || getDate()))
             let scheduleNow = (await Schedule.findAll({
                     where: {
                         studentCode,
