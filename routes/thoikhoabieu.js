@@ -6,7 +6,8 @@
 const router = require("express").Router();
 const Chatfuel = require("chatfuel-helper");
 const loginKMA = require("tin-chi-kma")({});
-const moment = require("moment");
+// const moment = require("moment");
+const moment = require("moment-timezone");
 const parseSchedule = require("parse-schedule-kma");
 module.exports = function({ model, Op }) {
     const User = model.use('user');
@@ -14,7 +15,10 @@ module.exports = function({ model, Op }) {
     const Schedule = model.use('schedule');
 
     function getDate(date) {
-        let now = new Date(date || new Date());
+        // let now = new Date(moment.date || new Date());
+        let now;
+        if (date) now = moment.tz(date, "DD/MM/YYYY", "Asia/Ho_Chi_Minh")
+        else now = moment().tz("Asia/Ho_Chi_Minh")
         let month = now.getMonth() + 1 + '';
         let day = now.getDate() + '';
         let year = now.getFullYear();
@@ -25,7 +29,7 @@ module.exports = function({ model, Op }) {
     }
 
     function getDaysOfWeek(date = new Date()) {
-        let now = moment(moment(new Date(date)).format("DD/MM/YYYY"), "DD/MM/YYYY");
+        let now = moment.tz(moment.tz(new Date(date), "Asia/Ho_Chi_Minh").format("DD/MM/YYYY"), "DD/MM/YYYY", "Asia/Ho_Chi_Minh");
         let result = new Array();
         for (let i = 0; i <= 6; i++) {
             result.push(now.day(i).format("DD/MM/YYYY"));
@@ -34,7 +38,7 @@ module.exports = function({ model, Op }) {
     }
 
     function diffDay(a, b) {
-        return moment(a.day, "DD/MM/YYYY").unix() - moment(b.day, "DD/MM/YYYY").unix();
+        return moment.tz(a.day, "DD/MM/YYYY", "Asia/Ho_Chi_Minh").unix() - moment.tz(b.day, "DD/MM/YYYY", "Asia/Ho_Chi_Minh").unix();
     }
     //Xử lý trung gian kiểm tra xem đã đăng ký hay chưa
     router.post('/', async function(req, res, next) {
@@ -104,7 +108,7 @@ module.exports = function({ model, Op }) {
                     where: {
                         studentCode,
                         day: asweek ? {
-                            [Op.in]: getDaysOfWeek(moment(dayofweek, "DD/MM/YYYY") || undefined)
+                            [Op.in]: getDaysOfWeek(dayofweek || undefined)
                         } : (dateFind || getDate())
                     }
                 }))
