@@ -12,7 +12,7 @@ function listen() {
 }
 sequelize
     .authenticate()
-    .then(console.log("Connect database success!"))
+    .then(() => console.log("Connect database success!"))
     .then(listen)
     .catch(err => {
         console.error('Unable to connect to the database:', err);

@@ -43,13 +43,7 @@ module.exports = function({ model, Op }) {
 
             if (/^tkb/.test(userMessage)) {
 
-                let studentDescribed = await Describe.findOne({
-                    where: { chatfuel_user_id },
-                    attributes: ['studentCode', 'studentName', 'done']
-                })
-                if (!studentDescribed) return res.send((new Chatfuel()).redirectToBlock(['nhap_info_sinhvien']));
-                else if (studentDescribed.get({ plain: true }).done == false) return res.send((new Chatfuel()).sendText("Đang trong quá trình cập nhật").sendText("Thử lại sau vài giây").render());
-                else return res.send((new Chatfuel()).redirectToBlock(['thoi_khoa_bieu']));
+                return res.send((new Chatfuel()).redirectToBlock(['thoi_khoa_bieu']));
             }
             //Mặc định trả về tin nhắn cũ
             res.send((new Chatfuel()).sendText(userMessage).render());
