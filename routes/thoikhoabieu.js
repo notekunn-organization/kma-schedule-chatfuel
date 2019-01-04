@@ -164,10 +164,11 @@ module.exports = function({ model, Op }) {
             })
             if (!studentDescribed) return res.json({ messages: [] });
             let { studentCode } = studentDescribed.get({ plain: true })
+            let dayFind = moment.tz('Asia/Ho_Chi_Minh').hours() < 17 ? moment.tz('Asia/Ho_Chi_Minh') : moment.tz('Asia/Ho_Chi_Minh').add(1, 'days');
             let scheduleNow = (await Schedule.findAll({
                     where: {
                         studentCode,
-                        day: moment.tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY')
+                        day: dayFind.format('DD/MM/YYYY')
                     }
                 }))
                 .map(e => e.get({ plain: true }))
