@@ -24,7 +24,7 @@ module.exports = function({ model, Op }) {
 
     function getDaysOfWeek(date) {
         let now;
-        if(!date) now = moment().tz("Asia/Ho_Chi_Minh");
+        if (!date) now = moment().tz("Asia/Ho_Chi_Minh");
         else now = moment.tz(date, "DD/MM/YYYY", "Asia/Ho_Chi_Minh");
         let result = new Array();
         for (let i = 0; i <= 6; i++) {
@@ -46,7 +46,7 @@ module.exports = function({ model, Op }) {
         if (!studentDescribed) return res.send((new Chatfuel()).redirectToBlock(['nhap_info_sinhvien']));
         else if (studentDescribed.get({ plain: true }).done == false) return res.send((new Chatfuel()).sendText("Đang trong quá trình cập nhật").sendText("Thử lại sau vài giây").render());
         else return res.send((new Chatfuel()).redirectToBlock(['tra_cuu_thoi_khoa_bieu']));
-    })
+    });
     //Xử lý cập  nhật thời khóa biểu
     router.post('/update', function(req, res, next) {
         let { 'chatfuel user id': chatfuel_user_id, tai_khoan_sinh_vien: user, mat_khau_sinh_vien: pass } = req.body;
@@ -152,7 +152,48 @@ module.exports = function({ model, Op }) {
         catch (e) {
             res.send((new Chatfuel()).sendText("Bị lỗi khi tra cứu:\n" + e).render());
         }
+    });
+
+    router.post('/broadcast', async function(req, res) {
+        let chatfuel = new Chatfuel();
+        let { 'chatfuel user id': chatfuel_user_id, register } = req.body;
+        try {
+            let studentDescribed = await Describe.findOne({
+                where: { chatfuel_user_id, done: true },
+                attributes: ['studentCode', 'studentName']
+            })
+            if (!studentDescribed) return res.json({ messages: [] });
+            let { studentCode } = studentDescribed.get({ plain: true })
+            let scheduleNow = (await Schedule.findAll({
+                    where: {
+                        studentCode,
+                        day: moment.tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY')
+                    }
+                }))
+                .map(e => e.get({ plain: true }))
+                .sort(function(a, b) {
+                    return parseInt(a.lesson) - parseInt(b.lesson) > 0 || a.split(',').pop() - b.split(',').pop() > 0
+                });
+            if (chatfuel.length == 0) return res.json({ messages: [] });
+            scheduleNow.forEach(({ day, subjectCode, subjectName, className, teacher, lesson, room }, index) => {
+                if (index == 0) chatfuel.sendText(`Thời khóa biểu ngày ${day}`);
+                chatfuel.sendText(`\`\`\`\nTiết ${lesson}:\n${subjectName}\nĐịa điểm: ${room} ${ teacher ? '\nGiáo viên: '+ teacher : '.'}\n\`\`\``)
+            })
+            let btnHuy = chatfuel.creatButtonToBlock({
+                title: 'Huỷ đăng ký',
+                block_names: ['huy_dang_ky_thoi_khoa_bieu']
+            });
+            chatfuel.sendButton({
+                text: 'Bạn cảm thấy phiền ?',
+                buttons: [btnHuy]
+            })
+            return res.send(chatfuel.render())
+        }
+        catch (e) {
+            return res.json({ messages: [] });
+        }
     })
+
 
     return router;
 }
