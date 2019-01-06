@@ -5,6 +5,7 @@
 
 const router = require("express").Router();
 const Chatfuel = require("chatfuel-helper");
+const request = require("request-promise");
 module.exports = function({ model, Op }) {
     const User = model.use('user');
     const Describe = model.use('describe');
@@ -46,7 +47,19 @@ module.exports = function({ model, Op }) {
                 return res.send((new Chatfuel()).redirectToBlock(['thoi_khoa_bieu']));
             }
             //Mặc định trả về tin nhắn cũ
-            res.send((new Chatfuel()).sendText(userMessage).render());
+            if (!process.env.SIMSIMI_KEY) return res.send((new Chatfuel()).sendText(userMessage).render());
+            request({
+                    url: 'http://api.simsimi.com/request.p',
+                    qs: {
+                        key: process.env.SIMSIMI_KEY,
+                        text: userMessage,
+                        lc: 'vn',
+                        ft: process.env.SIMSIMI_FILTER
+                    },
+                    json: true
+                })
+                .then(({ response }) => res.send((new Chatfuel()).sendText(response).render()))
+                .catch(() => res.send((new Chatfuel()).sendText(userMessage).render()))
         })()
 
     });
