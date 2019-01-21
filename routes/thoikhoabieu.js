@@ -175,7 +175,7 @@ module.exports = function({ model, Op }) {
                 .sort(function(a, b) {
                     return parseInt(a.lesson) - parseInt(b.lesson) > 0 || a.split(',').pop() - b.split(',').pop() > 0
                 });
-            if (chatfuel.length == 0) return res.json({ messages: [] });
+            if (scheduleNow.length == 0) return res.json({ messages: [] });
             scheduleNow.forEach(({ day, subjectCode, subjectName, className, teacher, lesson, room }, index) => {
                 if (index == 0) chatfuel.sendText(`Thời khóa biểu ngày ${day}`);
                 chatfuel.sendText(`\`\`\`\nTiết ${lesson}:\n${subjectName}\nĐịa điểm: ${room} ${ teacher ? '\nGiáo viên: '+ teacher : '.'}\n\`\`\``)
