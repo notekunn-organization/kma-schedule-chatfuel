@@ -23,7 +23,7 @@ module.exports = {
             },
             timestamps: true
         },
-        sync: { force: false },
+        sync: { force: process.env.NODE_ENV == 'build' },
 
     }),
     Sequelize,

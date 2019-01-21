@@ -15,6 +15,14 @@ module.exports = function({ sequelize, Sequelize }) {
         },
         gender: {
             type: Sequelize.STRING
+        },
+        filterBadword: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: false
+        },
+        voiceChat: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: false
         }
     });
     User.sync({ force: process.env.NODE_ENV == 'build' });
