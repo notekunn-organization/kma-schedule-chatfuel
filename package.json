@@ -19,7 +19,7 @@
   "homepage": "https://github.com/my-shit-project/kma-schedule-chatfuel#readme",
   "dependencies": {
     "body-parser": "^1.18.3",
-    "broadcast-chatfuel": "^1.1.1",
+    "broadcast-chatfuel": "^1.1.2",
     "chatfuel-helper": "^1.1.1",
     "dotenv": "^6.2.0",
     "express": "^4.16.4",

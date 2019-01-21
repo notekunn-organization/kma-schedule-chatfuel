@@ -1,7 +1,7 @@
 const moment = require("moment-timezone");
 const cron = require("node-schedule");
 const broadcast = require('broadcast-chatfuel')({ botID: process.env.CHATFUEL_BOT_ID, token: process.env.CHATFUEL_BOT_TOKEN })
-const hourCron = [5, 21];
+const hourCron = [21];
 module.exports = function({ model, Op }) {
     const Describe = model.use('describe');
     let cronTab = cron.scheduleJob('0 * * * *', function() {
