@@ -6,7 +6,7 @@
 const router = require("express").Router();
 const Chatfuel = require("chatfuel-helper");
 const request = require("request-promise");
-const { boiThay, boiBai } = require("./controler/thayboi");
+const { boiThay, boiBai } = require("../controller/thayboi");
 module.exports = function({ model, Op }) {
     const User = model.use('user');
     const Describe = model.use('describe');
