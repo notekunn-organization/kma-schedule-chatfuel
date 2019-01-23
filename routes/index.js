@@ -6,6 +6,7 @@
 const router = require("express").Router();
 const Chatfuel = require("chatfuel-helper");
 const request = require("request-promise");
+const { boiThay, boiBai } = require("./controler/thayboi");
 module.exports = function({ model, Op }) {
     const User = model.use('user');
     const Describe = model.use('describe');
@@ -49,6 +50,14 @@ module.exports = function({ model, Op }) {
 
                 return res.send((new Chatfuel()).redirectToBlock(['thoi_khoa_bieu']));
             }
+
+            if (userMessage.includes("thầy")) {
+                return res.send((new Chatfuel()).sendText(boiThay()).render());
+            }
+
+            if (userMessage.includes("bói bài")) {
+                return res.send((new Chatfuel()).sendText(boiBai()).render());
+            }
             //Mặc định trả về tin nhắn cũ
             if (!process.env.SIMSIMI_KEY) return res.send((new Chatfuel()).sendText(userMessage).render());
             //
@@ -62,7 +71,7 @@ module.exports = function({ model, Op }) {
                     },
                     json: true
                 })
-                .then(({ response = "hi"}) => {
+                .then(({ response = "hi" }) => {
                     if (voiceChat) return res.send((new Chatfuel()).sendAudio(`http://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=vi&q=${encodeURI(response)}`).render());
                     return res.send((new Chatfuel()).sendText(response).render())
                 })
