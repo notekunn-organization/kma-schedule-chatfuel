@@ -2,11 +2,12 @@
 // module.exports = function({model, Op}){
 
 // }
-
+const URL = require("url");
 const router = require("express").Router();
 const Chatfuel = require("chatfuel-helper");
 const request = require("request-promise");
 const { boiThay, boiBai } = require("../controller/thayboi");
+const regexUrl = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/;
 module.exports = function({ model, Op }) {
     const User = model.use('user');
     const Describe = model.use('describe');
@@ -44,11 +45,76 @@ module.exports = function({ model, Op }) {
         res.set({ 'Content-Type': 'application/json' });
         let userMessage = req.query.message;
         (async function xuly() {
-            //Nếu thực hiện tra cứu thời khóa biểu bằng lệnh
+
+            //Kiểm tra attachment và url
+            if (regexUrl.test(userMessage)) {
+                let url = URL.parse(userMessage);
+                switch (url.hostname) {
+                    case 'video.xx.fbcdn.net':
+
+                        break;
+                    case 'scontent.xx.fbcdn.net':
+
+                        break;
+
+                    default:
+                        break;
+
+                }
+            }
+
+            if (userMessage == "test") {
+                console.log("testing");
+                return res.json({
+                    "messages": [{
+                        "attachment": {
+                            "type": "template",
+                            "payload": {
+                                "template_type": "list",
+                                "top_element_style": "compact",
+                                "elements": [{
+                                        "title": "Chatfuel Rockets Jersey",
+                                        "default_action": {
+                                            "messenger_extensions": false
+                                        },
+                                        "buttons": [{
+                                            "type": "web_url",
+                                            "url": "https://rockets.chatfuel.com/store",
+                                            "title": "View Item"
+                                        }]
+                                    },
+                                    {
+                                        "title": "Chatfuel Rockets Jersey",
+                                        "default_action": {
+                                            "messenger_extensions": false
+                                        },
+                                        "buttons": [{
+                                            "type": "web_url",
+                                            "url": "https://rockets.chatfuel.com/store",
+                                            "title": "View Item"
+                                        }]
+                                    }
+                                ]
+                            }
+                        }
+                    }]
+                })
+            }
+            //Nếu thực hiện tra cứu thời khóa biểu bằng lệnh            
+
 
             if (/^tkb/.test(userMessage)) {
 
                 return res.send((new Chatfuel()).redirectToBlock(['thoi_khoa_bieu']));
+            }
+
+
+            if (/^tinchi/.test(userMessage)) {
+
+
+                let userDescribe = await Describe.findOne({ where: { chatfuel_user_id } });
+                if (!userDescribe) return res.end();
+                return res.send((new Chatfuel()).redirectToBlock(['tin_chi']));
             }
 
             if (userMessage.includes("thầy")) {
@@ -71,7 +137,7 @@ module.exports = function({ model, Op }) {
                     },
                     json: true
                 })
-                .then(({ response = "hi" }) => {
+                .then(({ response = userMessage }) => {
                     if (voiceChat) return res.send((new Chatfuel()).sendAudio(`http://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=vi&q=${encodeURI(response)}`).render());
                     return res.send((new Chatfuel()).sendText(response).render())
                 })
