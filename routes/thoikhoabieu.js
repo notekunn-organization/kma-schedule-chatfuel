@@ -6,6 +6,7 @@
 const router = require("express").Router();
 const Chatfuel = require("chatfuel-helper");
 const loginKMA = require("tin-chi-kma")({});
+const buildUrl = require("build-url");
 // const moment = require("moment");
 const moment = require("moment-timezone");
 const parseSchedule = require("parse-schedule-kma");
@@ -49,43 +50,81 @@ module.exports = function({ model, Op }) {
     });
     //Xử lý cập  nhật thời khóa biểu
     router.post('/update', function(req, res, next) {
-        let { 'chatfuel user id': chatfuel_user_id, tai_khoan_sinh_vien: user, mat_khau_sinh_vien: pass } = req.body;
+        let { 'chatfuel user id': chatfuel_user_id, tai_khoan_sinh_vien: user, mat_khau_sinh_vien: pass, semester, URL_JSON_API: url_json_api } = req.body;
         loginKMA({ user, pass }, async function(error, api) {
             if (error) return res.send((new Chatfuel).sendText('Tài khoản hoặc mật khẩu không đúng').sendText('Vui lòng thử lại').render())
             else {
-                // let result = {new Chatfuel();
-                await Describe.upsert({
-                    chatfuel_user_id
-                }, { fields: ['chatfuel_user_id'] })
-                res.json({
-                    redirect_to_blocks: ['tra_cuu_thoi_khoa_bieu'],
-                    messages: [{
-                        text: "Đang tiến hành tải thời khóa biểu về\nBạn có thể tra cứu sau vài giây!"
-                    }]
-                })
-                api.studentTimeTable.downloadTimeTable({}, function(buffer) {
+                api.studentTimeTable.getSemester(function(semesters) {
 
-                    let { studentCode, studentName, scheduleData } = parseSchedule(buffer);
-                    if (!studentCode) return Describe.destroy({
-                        where: {
-                            chatfuel_user_id
-                        }
-                    })
-                    Promise.all(scheduleData.map(schedule => Schedule.findOrCreate({
-                        where: {
-                            studentCode,
-                            ...schedule
-                        },
-                        defaults: {}
-                    }))).then(Describe.update({
-                        studentCode,
-                        studentName,
-                        done: true
-                    }, { where: { chatfuel_user_id } }))
+                    let chatfuel = new Chatfuel();
+
+                    if (semesters.length > 0) {
+                        let elements = new Array();
+
+                        semesters.splice(0, 4).forEach(function(semester) {
+                            let [number, start, end] = semester.name.split('_');
+                            let buttons = [chatfuel.createButtonPostBack({
+                                url: buildUrl(`${process.env.HTTPS == '0' ? 'http': 'https' }://${url_json_api}/thoikhoabieu/download/`, {
+                                    queryParams: {
+                                        chatfuel_user_id,
+                                        user,
+                                        pass,
+                                        semester: semester.value,
+                                    }
+                                }),
+                                title: "Chọn học kỳ này"
+
+                            })];
+                            elements.push(chatfuel.createElement({ title: semester.name, image_url: undefined, subtitle: `Học kỳ ${number} năm học ${start}-${end}.`, buttons }))
+                        });
+
+                        chatfuel.sendLists({ elements });
+                        res.send(chatfuel.render());
+                    }
+                    else res.send(chatfuel.sendText("Không tìm thấy năm học UwU.").render());
                 })
+
             }
         })
     });
+
+    router.post('/download', function(req, res, next) {
+        let { chatfuel_user_id, user, pass, semester } = req.query;
+        loginKMA({ user, pass }, async function(error, api) {
+            if (error) return res.send((new Chatfuel).sendText('Tài khoản hoặc mật khẩu không đúng').sendText('Vui lòng thử lại').render())
+            // let result = {new Chatfuel();
+            await Describe.upsert({
+                chatfuel_user_id
+            }, { fields: ['chatfuel_user_id'] })
+            res.json({
+                redirect_to_blocks: ['tra_cuu_thoi_khoa_bieu'],
+                messages: [{
+                    text: "Đang tiến hành tải thời khóa biểu về\nBạn có thể tra cứu sau 30 giây!"
+                }]
+            })
+            api.studentTimeTable.downloadTimeTable({ semester }, function(buffer) {
+
+                let { studentCode, studentName, scheduleData } = parseSchedule(buffer);
+                if (!studentCode) return Describe.destroy({
+                    where: {
+                        chatfuel_user_id
+                    }
+                })
+                Promise.all(scheduleData.map(schedule => Schedule.findOrCreate({
+                    where: {
+                        studentCode,
+                        ...schedule
+                    },
+                    defaults: {}
+                }))).then(Describe.update({
+                    studentCode,
+                    studentName,
+                    done: true
+                }, { where: { chatfuel_user_id } }))
+            })
+
+        });
+    })
     //Xử lý tra cứu
     router.post('/search', async function(req, res) {
         let { 'chatfuel user id': chatfuel_user_id } = req.body;
@@ -180,14 +219,14 @@ module.exports = function({ model, Op }) {
                 if (index == 0) chatfuel.sendText(`Thời khóa biểu ngày ${day}`);
                 chatfuel.sendText(`\`\`\`\nTiết ${lesson}:\n${subjectName}\nĐịa điểm: ${room} ${ teacher ? '\nGiáo viên: '+ teacher : '.'}\n\`\`\``)
             })
-            let btnHuy = chatfuel.creatButtonToBlock({
-                title: 'Huỷ đăng ký',
-                block_names: ['huy_dang_ky_thoi_khoa_bieu']
-            });
-            chatfuel.sendButton({
-                text: 'Bạn cảm thấy phiền ?',
-                buttons: [btnHuy]
-            })
+            // let btnHuy = chatfuel.creatButtonToBlock({
+            //     title: 'Huỷ đăng ký',
+            //     block_names: ['huy_dang_ky_thoi_khoa_bieu']
+            // });
+            // chatfuel.sendButton({
+            //     text: 'Bạn cảm thấy phiền ?',
+            //     buttons: [btnHuy]
+            // })
             return res.send(chatfuel.render())
         }
         catch (e) {

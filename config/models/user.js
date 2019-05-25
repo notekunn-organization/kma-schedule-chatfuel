@@ -18,7 +18,7 @@ module.exports = function({ sequelize, Sequelize }) {
         },
         filterBadword: {
             type: Sequelize.BOOLEAN,
-            defaultValue: false
+            defaultValue: true
         },
         voiceChat: {
             type: Sequelize.BOOLEAN,
